@@ -1,0 +1,92 @@
+#:kivy 1.0
+#:import kivy kivy
+#:import win kivy.core.window
+
+
+<Cinfdata>:
+    ScrollView:
+        size_hint: None, None
+        size: 500, 320
+        pos_hint: {'center_x': .5, 'center_y': .5}
+    
+        GridLayout:
+            cols: 1
+            padding: 10
+            spacing: 10
+            height: self.minimum_height
+            do_scroll_x: False
+    
+            ScrollButton:
+                text: '1'
+            ScrollButton:
+                text: '2'
+            ScrollButton:
+                text: '3'
+            ScrollButton:
+                text: '4'
+            ScrollButton:
+                text: '5'
+            ScrollButton:
+                text: '6'
+
+<ScrollButton@Button>
+    size_hint: None, None
+    size: 480, 40
+
+<MainView>:
+    canvas:
+        Color:
+            rgb: 0.047, 0.365, 0.647
+        Rectangle:
+            size: root.size
+
+    FloatLayout:
+        size: root.size
+        BoxLayout:
+            padding: 10
+            spacing: 10
+            size_hint: 1, None
+            pos_hint: {'top': 1}
+            
+            height: 64
+            width: 200
+            Image:
+                size_hint: None, None
+                size: 69, 44
+                source: 'cinf_logo_beta_greek.png'
+            Label:
+                height: 44
+                text_size: self.width, None
+                color: (1, 1, 1, .8)
+                text: 'Cinfdata App v. {}'.format(root.version)
+        MainImage:
+            source: 'plot.png'
+            center_x: root.center_x
+            center_y: root.center_y
+
+<MainImage>:
+    # each time a picture is created, the image can delay the loading
+    # as soon as the image is loaded, ensure that the center is changed
+    # to the center of the screen.
+    size: image.size
+    size_hint: None, None
+    do_rotation: False
+    #pos_hint: {'top', 0.1}
+    
+
+    Image:
+        id: image
+        source: root.source
+
+        # create initial image to be 400 pixels width
+        size: 400, 400 / self.image_ratio
+
+        # add shadow background
+        canvas.before:
+            Color:
+                rgba: 1,1,1,1
+            BorderImage:
+                source: 'shadow32.png'
+                border: (36,36,36,36)
+                size:(self.width+72, self.height+72)
+                pos: (-36,-36)

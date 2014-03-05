@@ -1,40 +1,32 @@
-# -*- coding: utf-8 -*-
-"""
-Main file for the cinfdata app
-"""
-
-
-__version__ = '0.1'
-
-
 from kivy.app import App
-from kivy.uix.widget import Widget
-from kivy.uix.scatter import Scatter
-from kivy.properties import StringProperty
+from kivy.uix.label import Label
+from kivy.uix.carousel import Carousel
+from kivy.uix.accordion import Accordion, AccordionItem
 
-
-class MainImage(Scatter):
-    source = StringProperty(None)
-
-
-class MainView(Widget):
-    version = StringProperty(__version__)
-
-
-class Cinfdata(Widget):
-    pass
+import creds
+from interface import CinfdataInterface
 
 class CinfdataApp(App):
     def build(self):
-        #root = self.root
-        cinfdata = Cinfdata()
-        # load the image
-        #picture = MainImage(source='plot.png')
-        # add to the main field
-        #cinfdata.add_widget(picture)
-        #print cinfdata.canvas.__dict__
-        return cinfdata
+        return MainCarousel()
+
+
+class MainCarousel(Carousel):
+    pass
+
+
+class PageSelection(Accordion):
+    def __init__(self, **kwargs):
+        super(PageSelection, self).__init__(**kwargs)
+        cdi = CinfdataInterface(creds.username, creds.password)
+        for setup in cdi.get_setups():
+            item = AccordionItem(title=setup)
+            for plot in cdi.get_dateplots(setup):
+                item.add_widget(Label(text=plot))
+            self.add_widget(item)
+
 
 
 if __name__ == '__main__':
-    CinfdataApp().run()
+    app = CinfdataApp()
+    app.run()
