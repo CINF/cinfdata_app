@@ -1,7 +1,14 @@
+#:kivy 1.0
+#:import time time
+
 <MainCarousel>:
-    index: 1
-    Label:
-        text: "1"
+    id: maincar
+    index: 0
+    DatePlotOptions:
+        id: dateplot_options
+    #Label:
+    #    id: lab1
+    #    text: "First select a plot"
     FloatLayout:
         Scatter:
             Label:
@@ -16,4 +23,88 @@
     group: 'plots'
     size_hint: 1, None
     
-
+<DatePlotOptions>:
+    id: dateplot_options
+    orientation: 'vertical'
+    AccordionItem:
+        id: datedate
+        title: 'General'
+        BoxLayout:
+            id: vbox
+            orientation: 'vertical'
+            Label:
+                text: 'To'
+            BoxLayout:
+                id: to
+                size_hint: 1, None
+                Spinner:
+                    id: to_year
+                    text: str(time.strftime('%Y'))
+                    values: [str(v) for v in range(int(time.strftime('%Y')), 2008, -1)]
+                    on_text: dateplot_options.change(self, self.text)
+                Label:
+                    text: '-'
+                Spinner:
+                    id: to_month
+                    text: str(int(time.strftime('%m')))
+                    values: [str(val) for val in range(12, 0, -1)]
+                    on_text: dateplot_options.change(self, self.text)
+                Label:
+                    text: '-'
+                Spinner:
+                    id: to_day
+                    text: str(int(time.strftime('%d')))
+                    values: [str(val) for val in range(31, 0, -1)]
+                    on_text: dateplot_options.change(self, self.text)
+                Label:
+                    text: ' '
+                Spinner:
+                    id: to_hour
+                    text: str(int(time.strftime('%H')))
+                    values: [str(val) for val in range(23, -1, -1)]
+                    on_text: dateplot_options.change(self, self.text)
+                Label:
+                    text: ':'
+                Spinner:
+                    id: to_minute
+                    # -(-27 / 5) * 5 = 30 i.e. ceil of division by 5
+                    text: str(-(-int(time.strftime('%M')) / 5) * 5)
+                    values: [str(val) for val in range(55, -1, -5)]
+                    on_text: dateplot_options.change(self, self.text)
+            Label:
+                text: 'From'
+            BoxLayout:
+                size_hint: 1, None
+                Spinner:
+                    id: from_year
+                    text: str(time.strftime('%Y'))
+                    values: [str(v) for v in range(int(time.strftime('%Y')), 2008, -1)]
+                    on_text: dateplot_options.change(self, self.text)
+                Label:
+                    text: '-'
+                Spinner:
+                    id: from_month
+                    text: str(int(time.strftime('%m')))
+                    values: [str(val) for val in range(12, 0, -1)]
+                    on_text: dateplot_options.change(self, self.text)
+                Label:
+                    text: '-'
+                Spinner:
+                    id: from_day
+                    text: str(int(time.strftime('%d')))
+                    values: [str(val) for val in range(31, 0, -1)]
+                    on_text: dateplot_options.change(self, self.text)
+                Label:
+                    text: ' '
+                Spinner:
+                    id: from_hour
+                    text: str(int(time.strftime('%H', time.localtime(time.time() - 3600))))
+                    values: [str(val) for val in range(23, -1, -1)]
+                    on_text: dateplot_options.change(self, self.text)
+                Label:
+                    text: ':'
+                Spinner:
+                    id: from_minute
+                    text: str(int(time.strftime('%M')) / 5 * 5)
+                    values: [str(val) for val in range(55, -1, -5)]
+                    on_text: dateplot_options.change(self, self.text)
