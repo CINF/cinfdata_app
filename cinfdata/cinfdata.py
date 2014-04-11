@@ -19,6 +19,7 @@ class Cinfdata(Widget):
             )[:-1]
         self.url_start = 'https://cinfdata.fysik.dtu.dk/'
         self.basestring = "Basic {}".format(base64string)
+        self.dateplot_options = {}
 
     def _get_data(self, url):
         request = urllib2.Request(url)
@@ -30,12 +31,13 @@ class Cinfdata(Widget):
 
     def get_setups(self):
         """Get the list of setups from cinfdata"""
-        return ['setup1', 'setup2']
-        #url = '{}index_json.php'.format(self.url_start)
-        #return self._get_data(url)
+        url = '{}index_json.php'.format(self.url_start)
+        return self._get_data(url)
 
     def get_plots(self, setup):
         """Get the plots from cinfdata for a specific setup"""
-        return [{'type': 'type1', 'graph_type': 'date', 'title': 'MyTitle'}] * 2
-        #url = '{}{}/info_json.php'.format(self.url_start, setup)
-        #return self._get_data(url)
+        url = '{}{}/info_json.php'.format(self.url_start, setup)
+        return self._get_data(url)
+
+    def update_datetime(self, name, value):
+        self.dateplot_options[name] = value
