@@ -1,6 +1,7 @@
 
 import time
 import calendar
+import StringIO
 
 from kivy.app import App
 from kivy.uix.label import Label
@@ -9,6 +10,8 @@ from kivy.uix.accordion import Accordion, AccordionItem
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.popup import Popup
+from kivy.uix.scatter import Scatter
+from kivy.core.image.img_pygame import ImageLoaderPygame
 from kivy.clock import Clock
 from kivy.properties import ObjectProperty
 from kivy.properties import StringProperty
@@ -19,6 +22,7 @@ from kivy.logger import Logger
 import creds
 from cinfdata import Cinfdata
 
+__version__ = 0.1
 
 class CinfdataApp(App):
     def build(self):
@@ -38,18 +42,29 @@ class MainCarousel(Carousel):
 
         # Add a reference to cinfdata to page selection
         self.ids.page_selection.cinfdata = self.cinfdata
+        self.ids.main_image.cinfdata = self.cinfdata
 
         # Initiate date plot options and add cinfdata reference
         self.dateplot_options = DatePlotOptions()
         self.dateplot_options.cinfdata = self.cinfdata
 
-        # This emulates pressing the plot selection button and should set all
-        # of the gui up for a specific plot
-        self.cinfdata.selected_plot = self.ids.page_selection.first
+        with open('data/waiting.png', 'rb') as file_:
+            data = StringIO.StringIO(file_.read())
+            self.waiting_png = ImageLoaderPygame(data)
 
     def on_index(self, *args):
         super(MainCarousel, self).on_index(*args)
         Logger.debug('MainCarousel: index: {}'.format(args[1]))
+        if args[1] == 1:
+            # First time on_index is called, there is no cinfdata object yet
+            if not hasattr(self, 'cinfdata'):
+                return
+            self.ids.main_image.update_image(self.waiting_png)
+            Clock.schedule_once(self._get_image_and_update)
+    
+    def _get_image_and_update(self, time):
+        data = self.cinfdata.get_plot()
+        self.ids.main_image.update_image(data)
 
     def change_plot(self, instance, value):
         """Change the plot settings widget when a new plot is selected"""
@@ -70,7 +85,6 @@ class PageSelection(Accordion):
 
     def __init__(self, **kwargs):
         super(PageSelection, self).__init__(**kwargs)
-        self.first = None
 
     def on_cinfdata(self, instance, value):
 
@@ -90,12 +104,6 @@ class PageSelection(Accordion):
                                           graph['type'],
                                           text=graph['title'],
                                           on_press=self._select)
-                #self.plots[button] = (setup, graph)
-
-                # Set first button as default #
-                if self.first is None:
-                    self.first = button
-                    button.state = 'down'
                 box.add_widget(button)
 
             box.add_widget(Label())
@@ -105,6 +113,7 @@ class PageSelection(Accordion):
     def _select(self, *args):
         """Set the selected plot"""
         self.cinfdata.selected_plot = args[0]
+        self.cinfdata.dateplot_options['selected_plot'] = args[0]
 
 
 class PlotSelectButton(ToggleButton):
@@ -181,6 +190,21 @@ class DatePlotOptions(Accordion):
 class NoNetworkError(Popup):
     pass
 
+
+class MainImage(Scatter):
+
+    cinfdata = None
+
+    def __init__(self, **args):
+        super(MainImage, self).__init__(**args)
+        self.first = True
+
+    def update_image(self, data):
+        """Update the image"""
+        with self.ids.image.canvas:
+            self.ids.image.texture = data.texture
+        self.ids.image.canvas.ask_update()
+            
 
 if __name__ == '__main__':
     app = CinfdataApp()

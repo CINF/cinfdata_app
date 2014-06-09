@@ -1,5 +1,6 @@
 #:kivy 1.0
 #:import time time
+#:import main main
 
 <MainCarousel>:
     id: maincar
@@ -10,11 +11,66 @@
             id: lab1
             text: "First select a plot"
     FloatLayout:
-        Scatter:
+        size: root.size
+        canvas:
+            Color:
+                rgb: 0.2, 0.2, 0.2
+            Rectangle:
+                size: root.size
+        # Logo
+        BoxLayout:
+            canvas:
+                Color:
+                    rgb: 0.047, 0.365, 0.647
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+
+            padding: 10
+            spacing: 10
+            size_hint_y: None
+            pos_hint: {'top': 1}
+            height: 64
+            #width: 200
+            Image:
+                size_hint: None, None
+                size: 69, 44
+                source: 'data/cinf_logo_beta_greek.png'
             Label:
-                text: "2"
+                #text_size: self.width, None
+                font_size: 26
+                size_hint: None, None
+                height: 44
+                width: 230
+                # 90% visible white
+                color: (1, 1, 1, .9)
+                text: 'Cinfdata App v. {}'.format(main.__version__)
+        MainImage:
+            id: main_image
+            center_x: root.center_x
+            center_y: root.center_y
     PageSelection:
         id: page_selection
+
+<MainImage>:
+    size: image.size
+    size_hint: None, None
+    do_rotation: False
+    Image:
+        id: image
+        source: 'data/splash.png'
+
+        # create initial image to be 400 pixels width
+        size: 400, 400 / self.image_ratio
+
+        # add shadow background
+        canvas.before:
+            Color:
+                rgba: 0.047, 0.365, 0.647, 1
+            BorderImage:
+                source: 'data/shadow32.png'
+                size:(self.width+72, self.height+72)
+                pos: (-36,-36)
 
 <PageSelection>:
     orientation: 'vertical'
@@ -22,9 +78,19 @@
 <PlotSelectButton>:
     group: 'plots'
     size_hint: 1, None
-    
+    canvas:
+        Color:
+            rgb: 0.2, 0.2, 0.2
+        Rectangle:
+            size: root.size
+
 <DatePlotOptions>:
     id: dateplot_options
+    canvas:
+        Color:
+            rgb: 0.2, 0.2, 0.2
+        Rectangle:
+            size: root.size
     orientation: 'vertical'
     AccordionItem:
         id: datedate
