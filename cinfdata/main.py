@@ -11,7 +11,7 @@ from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.popup import Popup
 from kivy.uix.scatter import Scatter
-from kivy.core.image.img_pygame import ImageLoaderPygame
+from kivy.core.image import Image as CoreImage
 from kivy.clock import Clock
 from kivy.properties import ObjectProperty
 from kivy.properties import StringProperty
@@ -48,9 +48,7 @@ class MainCarousel(Carousel):
         self.dateplot_options = DatePlotOptions()
         self.dateplot_options.cinfdata = self.cinfdata
 
-        with open('data/waiting.png', 'rb') as file_:
-            data = StringIO.StringIO(file_.read())
-            self.waiting_png = ImageLoaderPygame(data)
+        self.waiting_png = CoreImage('data/waiting.png')
 
     def on_index(self, *args):
         super(MainCarousel, self).on_index(*args)

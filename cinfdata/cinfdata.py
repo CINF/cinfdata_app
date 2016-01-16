@@ -1,13 +1,15 @@
 """Module that contains the cinfdata class"""
 
-import StringIO
+from StringIO import StringIO
+from io import BytesIO
 import urllib2
 import base64
 import json
 
 from kivy.uix.widget import Widget
 from kivy.properties import ObjectProperty
-from kivy.core.image.img_pygame import ImageLoaderPygame
+#from kivy.core.image.img_pygame import ImageLoaderPygame
+from kivy.core.image import Image as CoreImage
 from kivy.logger import Logger
 
 class Cinfdata(Widget):
@@ -63,7 +65,6 @@ class Cinfdata(Widget):
         return url
 
     def get_plot(self):
-        #addr = 'https://cinfdata.fysik.dtu.dk/thetaprobe/plot.php?type=multidateplot_pressures&from=2014-04-07+18:28&to=2014-04-08+18:29&left_ymax=0&left_ymin=0&right_ymax=0&right_ymin=0&left_logscale=checked&right_logscale=checked&matplotlib=checked&left_plotlist[]=1&right_plotlist[]=2&image_format=png'
-        data = StringIO.StringIO(self._get_data(self.form_plot_url()))
-        return ImageLoaderPygame(data)
+        data = self._get_data(self.form_plot_url())
+        return CoreImage(BytesIO(data), ext='png')
         
