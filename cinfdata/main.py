@@ -2,6 +2,7 @@
 import time
 import calendar
 import StringIO
+from functools import partial
 
 from kivy.app import App
 from kivy.uix.label import Label
@@ -51,6 +52,10 @@ class MainCarousel(Carousel):
         self.waiting_png = CoreImage('data/waiting.png')
 
     def on_index(self, *args):
+        """Update image when switcing into the middle carousel part
+
+        on_index is called the caroudel is turned into a new position
+        """
         super(MainCarousel, self).on_index(*args)
         Logger.debug('MainCarousel: index: {}'.format(args[1]))
         if args[1] == 1:
@@ -61,21 +66,24 @@ class MainCarousel(Carousel):
             Clock.schedule_once(self._get_image_and_update)
     
     def _get_image_and_update(self, time):
+        """Get image from cinfdata and update main image"""
         data = self.cinfdata.get_plot()
         self.ids.main_image.update_image(data)
 
-    def change_plot(self, instance, value):
+    def change_plot(self, obj, setup_and_link):
         """Change the plot settings widget when a new plot is selected"""
+        setup, link = setup_and_link
         #index = self.index
-        if value.plot_type == 'date':
+        if link['pagetype'] == 'dateplot':
             self.ids.plot_settings.clear_widgets()
             self.ids.plot_settings.add_widget(self.dateplot_options)
             #self.remove_widget(self.slides[0])
             #self.add_widget(self.dateplot_options, -2)
             #self.index = index
         else:
-            message = 'Support for the \'{}\' plot type is not yet implemented'
+            message = 'Support for the \'{}\' plot type is not yet implemented'.format(link['pagetype'])
             raise(NotImplementedError(message))
+
 
 class PageSelection(Accordion):
 
@@ -85,33 +93,27 @@ class PageSelection(Accordion):
         super(PageSelection, self).__init__(**kwargs)
 
     def on_cinfdata(self, instance, value):
-
-        # Dict that relates buttons to (setup, plot)
-        #self.plots = {}
-        # Loop over the setups and create accordion item, the setups are
-        # delivered as a dict e.g:
-        # {'setup':'thetaprobe','setup_name':'Theta probe'}
+        Logger.debug('PageSelection on_cinfdata')
         for setup in self.cinfdata.get_setups():
-            item = AccordionItem(title=setup['setup_name'])
+            item = AccordionItem(title=setup['title'])
             box = BoxLayout(orientation='vertical')
 
             # Loop over plots for a setup and create PlotSelectButton (toggle)
-            for graph in self.cinfdata.get_plots(setup['setup']):
-                button = PlotSelectButton(setup['setup'],
-                                          graph['plot'],
-                                          graph['type'],
-                                          text=graph['title'],
-                                          on_press=self._select)
+            for link in setup['links']:
+                callback = partial(self._select, setup, link)
+                button = ToggleButton(text=link['title'], on_press=callback)
                 box.add_widget(button)
 
             box.add_widget(Label())
             item.add_widget(box)
             self.add_widget(item)
+            break
 
-    def _select(self, *args):
+    def _select(self, setup, link, widget):
         """Set the selected plot"""
-        self.cinfdata.selected_plot = args[0]
-        self.cinfdata.dateplot_options['selected_plot'] = args[0]
+        Logger.debug('PageSelection._select: "%s", "%s" %s', setup['title'],
+                     link['pagetype'], widget)
+        self.cinfdata.selected_plot = (setup, link)
 
 
 class PlotSelectButton(ToggleButton):

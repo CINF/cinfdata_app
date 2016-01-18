@@ -27,6 +27,7 @@ class Cinfdata(Widget):
         self.dateplot_options = {}
 
     def _get_data(self, url):
+        Logger.debug('Cinfdata._get_data: %s', url)
         request = urllib2.Request(url)
         request.add_header("Authorization", self.basestring)
         handle = urllib2.urlopen(request)
@@ -39,7 +40,7 @@ class Cinfdata(Widget):
 
     def get_setups(self):
         """Get the list of setups from cinfdata"""
-        url = '{}index_json.php'.format(self.url_start)
+        url = '{}data_as_json.php?request=index'.format(self.url_start)
         return self._get_json(url)
 
     def get_plots(self, setup):
@@ -51,8 +52,10 @@ class Cinfdata(Widget):
         self.dateplot_options[name] = value
 
     def form_plot_url(self):
-        url = self.url_start + self.selected_plot.setup + '/plot.php?'
-        options = {'type': self.selected_plot.plot,
+        setup, link = self.selected_plot
+        setup_folder = link['path'].lstrip('/').split('/')[0]
+        url = self.url_start + setup_folder + '/plot.php?'
+        options = {'type': link['query_args']['type'],
                    'matplotlib': 'checked',
                    'image_format': 'png'}
         options['from'] = '{from_year:0>4}-{from_month:0>2}-{from_day:0>2}+'\
@@ -60,7 +63,7 @@ class Cinfdata(Widget):
         options['to'] = '{to_year:0>4}-{to_month:0>2}-{to_day:0>2}+'\
             '{to_hour:0>2}%3A{to_minute:0>2}'.format(**self.dateplot_options)
         url += '&'.join(['='.join(kv) for kv in options.items()])
-        url += '&left_plotlist[]=1&right_plotlist[]=2'  # HACK
+        url += '&left_plotlist[]=1'  # HACK
         Logger.debug('cinfdata: url formed: ' + url)
         return url
 
