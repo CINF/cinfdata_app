@@ -5,13 +5,15 @@ import StringIO
 from functools import partial
 
 from kivy.app import App
-from kivy.uix.label import Label
-from kivy.uix.carousel import Carousel
 from kivy.uix.accordion import Accordion, AccordionItem
-from kivy.uix.togglebutton import ToggleButton
+from kivy.uix.button import Button
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.carousel import Carousel
+from kivy.uix.dropdown import DropDown
+from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.scatter import Scatter
+from kivy.uix.togglebutton import ToggleButton
 from kivy.core.image import Image as CoreImage
 from kivy.clock import Clock
 from kivy.properties import ObjectProperty
@@ -85,7 +87,43 @@ class MainCarousel(Carousel):
             raise(NotImplementedError(message))
 
 
-class PageSelection(Accordion):
+class PageSelection(BoxLayout):
+    """The "right" widget, that is used to select which page to plot"""
+
+    cinfdata = ObjectProperty(None)
+
+    def __init__(self, **kwargs):
+        super(PageSelection, self).__init__(**kwargs)
+        self.page_links = None
+
+    def on_cinfdata(self, instance, value):
+        dropdown = DropDown()
+
+        for setup in self.cinfdata.get_setups():
+            btn = Button(text='Setup: ' + setup['title'], size_hint_y=None, height=44)
+            btn.bind(on_release=lambda btn: dropdown.select(btn.text))
+            dropdown.add_widget(btn)
+
+        mainbutton = Button(text='Hello', size_hint=(1, 0.2))
+
+        def ddopen(widget):
+            print('dd open')
+            dropdown.open(widget)
+        mainbutton.bind(on_release=ddopen)
+
+        dropdown.bind(on_select=lambda instance, x: setattr(mainbutton, 'text', x))
+
+        self.add_widget(mainbutton)
+        self.add_widget(Button(text='oo', size_hint=(1, 1)))
+
+    def _select(self, setup, link, widget):
+        """Set the selected plot"""
+        Logger.debug('PageSelection._select: "%s", "%s" %s', setup['title'],
+                     link['pagetype'], widget)
+        self.cinfdata.selected_plot = (setup, link)
+
+
+class PageSelection2(Accordion):
 
     cinfdata = ObjectProperty(None)
 
