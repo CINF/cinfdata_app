@@ -13,6 +13,7 @@ from kivy.uix.dropdown import DropDown
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.scatter import Scatter
+from kivy.uix.scrollview import ScrollView
 from kivy.uix.togglebutton import ToggleButton
 from kivy.core.image import Image as CoreImage
 from kivy.clock import Clock
@@ -87,6 +88,12 @@ class MainCarousel(Carousel):
             raise(NotImplementedError(message))
 
 
+class SetupButton(Button):
+    def __init__(self, *args, **kwargs):
+        self.data = kwargs.pop('setup')
+        super(SetupButton, self).__init__(*args, **kwargs)
+
+
 class PageSelection(BoxLayout):
     """The "right" widget, that is used to select which page to plot"""
 
@@ -94,34 +101,42 @@ class PageSelection(BoxLayout):
 
     def __init__(self, **kwargs):
         super(PageSelection, self).__init__(**kwargs)
-        self.page_links = None
+        self.mainbutton = Button(text='Select Setup', size_hint=(1, 0.2))
+        self.pages_widget = BoxLayout(orientation='vertical', size_hint=(1, None))
+        #self.pages_widget.bind(minimum_height=self.pages_widget.setter('height'))
+        self.pages_widget.add_widget(Button(text='Pages', size_hint=(1, 1)))
+        self.scroll_view = ScrollView(size_hint=(1, 0.8), do_scroll_x=False)
+        self.scroll_view.add_widget(self.pages_widget)
+        self.add_widget(self.mainbutton)
+        self.add_widget(self.scroll_view)
 
     def on_cinfdata(self, instance, value):
         dropdown = DropDown()
 
         for setup in self.cinfdata.get_setups():
-            btn = Button(text='Setup: ' + setup['title'], size_hint_y=None, height=44)
-            btn.bind(on_release=lambda btn: dropdown.select(btn.text))
+            btn = SetupButton(text='Setup: ' + setup['title'], size_hint_y=None,
+                              height=44, setup=setup)
+            btn.bind(on_release=lambda btn: dropdown.select(btn))
             dropdown.add_widget(btn)
 
-        mainbutton = Button(text='Hello', size_hint=(1, 0.2))
-
-        def ddopen(widget):
-            print('dd open')
+        def dd(widget):
             dropdown.open(widget)
-        mainbutton.bind(on_release=ddopen)
+            
+        self.mainbutton.bind(on_release=dd)
+        dropdown.bind(on_select=self._select)
 
-        dropdown.bind(on_select=lambda instance, x: setattr(mainbutton, 'text', x))
-
-        self.add_widget(mainbutton)
-        self.add_widget(Button(text='oo', size_hint=(1, 1)))
-
-    def _select(self, setup, link, widget):
+    def _select(self, dropdown, setup_button):
         """Set the selected plot"""
-        Logger.debug('PageSelection._select: "%s", "%s" %s', setup['title'],
-                     link['pagetype'], widget)
-        self.cinfdata.selected_plot = (setup, link)
+        Logger.debug('PageSelection._select: %s', setup_button.text)
+        self.mainbutton.text = setup_button.text
 
+        self.pages_widget.clear_widgets()
+        setup = setup_button.data
+        for link in setup_button.data['links']:
+            codename = setup['codename']
+            button = ToggleButton(text=link['title'], group=codename, size_hint_y=None, height=50)
+            self.pages_widget.add_widget(button)
+        self.pages_widget.height = len(setup_button.data['links']) * 50
 
 class PageSelection2(Accordion):
 
