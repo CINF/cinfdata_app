@@ -1,11 +1,35 @@
+# pylint: disable=no-name-in-module,no-member
+"""Main file for the Cinfdata app.
+
+This file contains mainly the UI. The file cinfdata.py contains the core interface to the
+data from cinfdata.fysik.dtu.dk.
+
+The Main UI is laid out like a carousel with 3 pages:
+
++----------+--------+-----------+
+| Plot     | Main   | Page      |
+| Settings | Figure | Selection |
++----------+--------+-----------+
+
+DESCRIBE PLOT SETTINGS
+
+The main figure page is the page in which the figure is displayed. It is layed out main in
+kivy language. It is a FloatLayout with a pinch zoom and pointer movable figure
+(MainImage, id=main_image). MainImage is defined both in kivy lang and in this file.
+
+The page selection page is the page in which the setup and plot page is selected. It is
+layed out in the PageSelection class (both in kivy lang and in this file). The main
+components are a DropDown to select the setup and below that a BoxLayout with pages in a
+ScrollView.
+
+"""
 
 import time
 import calendar
-import StringIO
 from functools import partial
 
 from kivy.app import App
-from kivy.uix.accordion import Accordion, AccordionItem
+from kivy.uix.accordion import Accordion
 from kivy.uix.button import Button
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.carousel import Carousel
@@ -18,7 +42,6 @@ from kivy.uix.togglebutton import ToggleButton
 from kivy.core.image import Image as CoreImage
 from kivy.clock import Clock
 from kivy.properties import ObjectProperty
-from kivy.properties import StringProperty
 from kivy.config import Config
 Config.set('kivy', 'log_level', 'debug')
 from kivy.logger import Logger
@@ -29,6 +52,7 @@ from cinfdata import Cinfdata
 __version__ = 0.1
 
 class CinfdataApp(App):
+    """This is the main CinfdataApp"""
     def build(self):
         return MainCarousel()
 
@@ -67,15 +91,15 @@ class MainCarousel(Carousel):
                 return
             self.ids.main_image.update_image(self.waiting_png)
             Clock.schedule_once(self._get_image_and_update)
-    
-    def _get_image_and_update(self, time):
+
+    def _get_image_and_update(self, _):
         """Get image from cinfdata and update main image"""
         data = self.cinfdata.get_plot()
         self.ids.main_image.update_image(data)
 
     def change_plot(self, obj, setup_and_link):
         """Change the plot settings widget when a new plot is selected"""
-        setup, link = setup_and_link
+        _, link = setup_and_link
         #index = self.index
         if link['pagetype'] == 'dateplot':
             self.ids.plot_settings.clear_widgets()
@@ -84,11 +108,17 @@ class MainCarousel(Carousel):
             #self.add_widget(self.dateplot_options, -2)
             #self.index = index
         else:
-            message = 'Support for the \'{}\' plot type is not yet implemented'.format(link['pagetype'])
-            raise(NotImplementedError(message))
+            message = 'Support for the \'{}\' plot type is not yet implemented'\
+                .format(link['pagetype'])
+            raise NotImplementedError(message)
 
 
 class SetupButton(Button):
+    """Class used for a setup button
+
+    It stores information about the setup in the data property
+
+    """
     def __init__(self, *args, **kwargs):
         self.data = kwargs.pop('setup')
         super(SetupButton, self).__init__(*args, **kwargs)
@@ -111,6 +141,9 @@ class PageSelection(BoxLayout):
         self.add_widget(self.scroll_view)
 
     def on_cinfdata(self, instance, value):
+        """Setup the setup selection page, when the cinfdata ObjectProperty is set
+        (happens only on startup)"""
+
         dropdown = DropDown()
 
         for setup in self.cinfdata.get_setups():
@@ -119,10 +152,7 @@ class PageSelection(BoxLayout):
             btn.bind(on_release=lambda btn: dropdown.select(btn))
             dropdown.add_widget(btn)
 
-        def dd(widget):
-            dropdown.open(widget)
-            
-        self.mainbutton.bind(on_release=dd)
+        self.mainbutton.bind(on_release=lambda widget: dropdown.open(widget))
         dropdown.bind(on_select=self._select)
 
     def _select(self, dropdown, setup_button):
@@ -134,56 +164,21 @@ class PageSelection(BoxLayout):
         setup = setup_button.data
         for link in setup_button.data['links']:
             codename = setup['codename']
-            button = ToggleButton(text=link['title'], group=codename, size_hint_y=None, height=50)
+            button = ToggleButton(text=link['title'], group=codename,
+                                  size_hint_y=None, height=50)
             self.pages_widget.add_widget(button)
         self.pages_widget.height = len(setup_button.data['links']) * 50
-
-class PageSelection2(Accordion):
-
-    cinfdata = ObjectProperty(None)
-
-    def __init__(self, **kwargs):
-        super(PageSelection, self).__init__(**kwargs)
-
-    def on_cinfdata(self, instance, value):
-        Logger.debug('PageSelection on_cinfdata')
-        for setup in self.cinfdata.get_setups():
-            item = AccordionItem(title=setup['title'])
-            box = BoxLayout(orientation='vertical')
-
-            # Loop over plots for a setup and create PlotSelectButton (toggle)
-            for link in setup['links']:
-                callback = partial(self._select, setup, link)
-                button = ToggleButton(text=link['title'], on_press=callback)
-                box.add_widget(button)
-
-            box.add_widget(Label())
-            item.add_widget(box)
-            self.add_widget(item)
-            break
-
-    def _select(self, setup, link, widget):
-        """Set the selected plot"""
-        Logger.debug('PageSelection._select: "%s", "%s" %s', setup['title'],
-                     link['pagetype'], widget)
-        self.cinfdata.selected_plot = (setup, link)
-
-
-class PlotSelectButton(ToggleButton):
-    def __init__(self, setup, plot, plot_type, **kwargs):
-        super(PlotSelectButton, self).__init__(**kwargs)
-        self.setup = setup
-        self.plot = plot
-        self.plot_type = plot_type
+        # Eventually set self.cinfdata.selected_plot with (setup, link)
 
 
 class DatePlotOptions(Accordion):
+    """Class for the date plot options"""
 
     cinfdata = ObjectProperty(None)
 
     def __init__(self, **kwargs):
         super(DatePlotOptions, self).__init__(**kwargs)
-        self.intervals = ['year', 'month', 'day', 'hour', 'minute']                    
+        self.intervals = ['year', 'month', 'day', 'hour', 'minute']
 
     def gui(self, direction, interval):
         """Convinience to get widget direction_interval e.g. from_hour"""
@@ -210,6 +205,11 @@ class DatePlotOptions(Accordion):
                                           new_selected_day)
 
     def on_cinfdata(self, instance, value):
+        """Update the values in cinfdata from the values in the controls when
+        the cinfdata ObjectProperty is set (this happens only on when
+        this class if first instantiated)
+
+        """
         # write the values from the controls into cinfdata
         for direction in ['from', 'to']:
             for interval in self.intervals:
@@ -224,8 +224,7 @@ class DatePlotOptions(Accordion):
         Logger.debug('DatePlotOptions:set_ago ' + str(interval))
         times = {
             'from': time.strftime('%Y_%m_%d_%H_%M',
-                                  time.localtime(time.time() - interval)
-                                  ).split('_')
+                                  time.localtime(time.time() - interval)).split('_')
             }
         times['to'] = time.strftime('%Y_%m_%d_%H_%M').split('_')
         for direction in ['from', 'to']:
@@ -236,15 +235,16 @@ class DatePlotOptions(Accordion):
         """Enable or disable the to controls"""
         Logger.debug('DatePlotOptions:set_to_state ' + str(state))
         self.cinfdata.update_datetime('to_active', state)
-        nn = NoNetworkError()
-        nn.open()
+        no_network_popup = NoNetworkError()
+        no_network_popup.open()
 
 
 class NoNetworkError(Popup):
-    pass
+    """Custom no network error popup"""
 
 
 class MainImage(Scatter):
+    """Class for the main image"""
 
     cinfdata = None
 
@@ -257,8 +257,13 @@ class MainImage(Scatter):
         with self.ids.image.canvas:
             self.ids.image.texture = data.texture
         self.ids.image.canvas.ask_update()
-            
 
-if __name__ == '__main__':
+
+def main():
+    """Main run function"""
     app = CinfdataApp()
     app.run()
+
+
+if __name__ == '__main__':
+    main()
