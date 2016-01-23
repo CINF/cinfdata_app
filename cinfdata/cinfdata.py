@@ -1,6 +1,14 @@
-"""Module that contains the cinfdata class"""
+# pylint: disable=no-name-in-module
 
-from StringIO import StringIO
+
+"""Module that contains the main interface to the cinfdata.fysik.dtu.dk interface (The
+Cinfdata class)
+
+NOTE: The Cinfdata class is a kivy Widget. This was necessary in order to use the kivy
+type properties (with observer pattern) for events.
+
+"""
+
 from io import BytesIO
 import urllib2
 import base64
@@ -8,16 +16,22 @@ import json
 
 from kivy.uix.widget import Widget
 from kivy.properties import ObjectProperty
-#from kivy.core.image.img_pygame import ImageLoaderPygame
 from kivy.core.image import Image as CoreImage
 from kivy.logger import Logger
 
 class Cinfdata(Widget):
+    """This class implements the main interface to the cinfdata.fysik.dtu.dk website
+
+    Its primary function is to procvide convinience methods to get the data from the
+    website
+
+    """
 
     selected_plot = ObjectProperty(None)
 
     def __init__(self, username, password):
         """Init urllib and data"""
+        super(Cinfdata, self).__init__()
         # Settings for urllib
         base64string = base64.encodestring(
             '{}:{}'.format(username, password)
@@ -27,6 +41,7 @@ class Cinfdata(Widget):
         self.dateplot_options = {}
 
     def _get_data(self, url):
+        """Return the bytes from a url"""
         Logger.debug('Cinfdata._get_data: %s', url)
         request = urllib2.Request(url)
         request.add_header("Authorization", self.basestring)
@@ -36,6 +51,7 @@ class Cinfdata(Widget):
         return data
 
     def _get_json(self, url):
+        """Return the object decoded from json from url"""
         return json.loads(self._get_data(url))
 
     def get_setups(self):
@@ -49,9 +65,11 @@ class Cinfdata(Widget):
         return self._get_json(url)
 
     def update_datetime(self, name, value):
+        """Update a datetime value"""
         self.dateplot_options[name] = value
 
     def form_plot_url(self):
+        """Returns formatted plot url"""
         setup, link = self.selected_plot
         setup_folder = link['path'].lstrip('/').split('/')[0]
         url = self.url_start + setup_folder + '/plot.php?'
@@ -68,6 +86,6 @@ class Cinfdata(Widget):
         return url
 
     def get_plot(self):
+        """Return a CoreImage from the current settings"""
         data = self._get_data(self.form_plot_url())
         return CoreImage(BytesIO(data), ext='png')
-        
