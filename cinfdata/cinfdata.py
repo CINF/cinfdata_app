@@ -29,16 +29,45 @@ class Cinfdata(Widget):
 
     selected_plot = ObjectProperty(None)
 
-    def __init__(self, username, password):
+    def __init__(self, gui, username, password):
         """Init urllib and data"""
         super(Cinfdata, self).__init__()
+
+        self.gui = gui
+        self.query_args = None
+        self.dateplot_options = {}
+
         # Settings for urllib
         base64string = base64.encodestring(
             '{}:{}'.format(username, password)
             )[:-1]
         self.url_start = 'https://cinfdata.fysik.dtu.dk/'
         self.basestring = "Basic {}".format(base64string)
-        self.dateplot_options = {}
+
+    def on_selected_plot(self, _, selected_plot):
+        """Initialize GUI and query args"""
+        setup, link = selected_plot
+        query_args_in = link['query_args']
+        self.query_args = {
+            'matplotlib': 'checked',
+            'image_format': 'png',
+            'type': query_args_in['type'],
+        }
+
+        # Get set/not set status of logscale settings
+        for key in ['left_logscale', 'right_logscale']:
+            if key in query_args_in:
+                query_args[key] = query_args_in[key]
+
+        # Get y axis extremum settings, or default to 0
+        for key in ['left_ymin', 'left_ymax', 'right_ymin', 'right_ymax']:
+            query_args[key] = query_args_in.get(key, 0)
+
+        # FIXME finish this, next up; plotlists
+
+        print(query_args)
+
+        self.gui.change_plot(selected_plot)
 
     def _get_data(self, url):
         """Return the bytes from a url"""

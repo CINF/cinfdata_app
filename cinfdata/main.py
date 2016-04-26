@@ -65,8 +65,7 @@ class MainCarousel(Carousel):
     def __init__(self, **kwargs):
         super(MainCarousel, self).__init__(**kwargs)
         # Initiate cinfdata and bind properties
-        self.cinfdata = Cinfdata(creds.username, creds.password)
-        self.cinfdata.bind(selected_plot=self.change_plot)
+        self.cinfdata = Cinfdata(self, creds.username, creds.password)
 
         # Add a reference to cinfdata to page selection
         self.ids.page_selection.cinfdata = self.cinfdata
@@ -97,7 +96,7 @@ class MainCarousel(Carousel):
         data = self.cinfdata.get_plot()
         self.ids.main_image.update_image(data)
 
-    def change_plot(self, obj, setup_and_link):
+    def change_plot(self, setup_and_link):
         """Change the plot settings widget when a new plot is selected"""
         _, link = setup_and_link
         #index = self.index
@@ -166,9 +165,15 @@ class PageSelection(BoxLayout):
             codename = setup['codename']
             button = ToggleButton(text=link['title'], group=codename,
                                   size_hint_y=None, height=50)
+            button.bind(on_release=partial(self._select_page, setup, link))
             self.pages_widget.add_widget(button)
         self.pages_widget.height = len(setup_button.data['links']) * 50
         # Eventually set self.cinfdata.selected_plot with (setup, link)
+
+    def _select_page(self, setup, link, widget):
+        """  """
+        Logger.debug('PageSelection._select_page: %s - %s', setup['title'], link['title'])
+        self.cinfdata.selected_plot = (setup, link)
 
 
 class DatePlotOptions(Accordion):
