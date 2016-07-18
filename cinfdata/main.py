@@ -24,9 +24,14 @@ ScrollView.
 
 """
 
+from __future__ import print_function
+
 import time
 import calendar
+from pprint import pprint
 from functools import partial
+
+from natsort import natsorted
 
 from kivy.app import App
 from kivy.uix.accordion import Accordion
@@ -72,8 +77,8 @@ class MainCarousel(Carousel):
         self.ids.main_image.cinfdata = self.cinfdata
 
         # Initiate date plot options and add cinfdata reference
-        self.dateplot_options = DatePlotOptions()
-        self.dateplot_options.cinfdata = self.cinfdata
+        #self.dateplot_options = DatePlotOptions()
+        #self.dateplot_options.cinfdata = self.cinfdata
 
         self.waiting_png = CoreImage('data/waiting.png')
 
@@ -87,6 +92,11 @@ class MainCarousel(Carousel):
         if args[1] == 1:
             # First time on_index is called, there is no cinfdata object yet
             if not hasattr(self, 'cinfdata'):
+                print("no cindata yet")
+                return
+
+            # Also we switch back to 
+            if self.cinfdata.selected_plot is None:
                 return
             self.ids.main_image.update_image(self.waiting_png)
             Clock.schedule_once(self._get_image_and_update)
@@ -98,14 +108,14 @@ class MainCarousel(Carousel):
 
     def change_plot(self, setup_and_link):
         """Change the plot settings widget when a new plot is selected"""
+        #Logger.debug("Change plot %s", setup_and_link[0])
+        #Logger.debug("Change plot %s", setup_and_link[1])
         _, link = setup_and_link
-        #index = self.index
         if link['pagetype'] == 'dateplot':
             self.ids.plot_settings.clear_widgets()
-            self.ids.plot_settings.add_widget(self.dateplot_options)
-            #self.remove_widget(self.slides[0])
-            #self.add_widget(self.dateplot_options, -2)
-            #self.index = index
+            dateplot_options = DatePlotOptions(setup_and_link)
+            dateplot_options.cinfdata = self.cinfdata
+            self.ids.plot_settings.add_widget(dateplot_options)
         else:
             message = 'Support for the \'{}\' plot type is not yet implemented'\
                 .format(link['pagetype'])
@@ -181,9 +191,22 @@ class DatePlotOptions(Accordion):
 
     cinfdata = ObjectProperty(None)
 
-    def __init__(self, **kwargs):
+    def __init__(self, setup_and_link, **kwargs):
         super(DatePlotOptions, self).__init__(**kwargs)
+        setup, link = setup_and_link
         self.intervals = ['year', 'month', 'day', 'hour', 'minute']
+        
+        # Form left and right selection boxes
+        pages = {key: value for key, value in link['graphsettings'].items() if key.startswith('dateplot')}
+        sorted_keys = natsorted(pages.keys())
+        bl = BoxLayout(orientation='vertical', size_hint=(1, None))
+        for key in sorted_keys:
+            graph = link['graphsettings'][key]
+            btn = ToggleButton(text=graph['title'], size_hint_y=None, height=50)
+            btn.bind(on_release=partial(self.change_plotlist, key))
+            bl.add_widget(btn)
+        self.ids.left_plotlist.add_widget(bl)
+        
 
     def gui(self, direction, interval):
         """Convinience to get widget direction_interval e.g. from_hour"""
@@ -208,6 +231,14 @@ class DatePlotOptions(Accordion):
             day_spinner.values = [str(d) for d in range(month_range, 0, -1)]
             self.cinfdata.update_datetime('{}_day'.format(direction),
                                           new_selected_day)
+
+    def change_plotlist(self, dateplot, button):
+        print(dateplot, button, button.state)
+
+        # Change setting in cinfdata and check whether the change was allowed, if not:
+
+        #if button.state == 'down':
+        #    button.state = 'normal'
 
     def on_cinfdata(self, instance, value):
         """Update the values in cinfdata from the values in the controls when
@@ -240,9 +271,6 @@ class DatePlotOptions(Accordion):
         """Enable or disable the to controls"""
         Logger.debug('DatePlotOptions:set_to_state ' + str(state))
         self.cinfdata.update_datetime('to_active', state)
-        no_network_popup = NoNetworkError()
-        no_network_popup.open()
-
 
 class NoNetworkError(Popup):
     """Custom no network error popup"""

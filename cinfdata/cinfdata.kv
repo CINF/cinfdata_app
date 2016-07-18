@@ -212,6 +212,13 @@
                     text: str(int(time.strftime('%M', time.localtime(time.time() - 3600))) )
                     values: [str(val) for val in range(55, -1, -5)]
                     on_text: dateplot_options.change(self, self.text)
+    AccordionItem:
+        id: left_plotlist
+        title: 'Left y-axis'
+    AccordionItem:
+        id: right_plotlist
+        title: 'Right y-axis'
+
 
 <NoNetworkError>:
     title: 'No Network'

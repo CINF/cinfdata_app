@@ -13,6 +13,7 @@ from io import BytesIO
 import urllib2
 import base64
 import json
+from pprint import pprint
 
 from kivy.uix.widget import Widget
 from kivy.properties import ObjectProperty
@@ -48,6 +49,7 @@ class Cinfdata(Widget):
         """Initialize GUI and query args"""
         setup, link = selected_plot
         query_args_in = link['query_args']
+        #pprint(setup)
         self.query_args = {
             'matplotlib': 'checked',
             'image_format': 'png',
@@ -57,15 +59,15 @@ class Cinfdata(Widget):
         # Get set/not set status of logscale settings
         for key in ['left_logscale', 'right_logscale']:
             if key in query_args_in:
-                query_args[key] = query_args_in[key]
+                self.query_args[key] = query_args_in[key]
 
         # Get y axis extremum settings, or default to 0
         for key in ['left_ymin', 'left_ymax', 'right_ymin', 'right_ymax']:
-            query_args[key] = query_args_in.get(key, 0)
+            self.query_args[key] = query_args_in.get(key, 0)
 
-        # FIXME finish this, next up; plotlists
-
-        print(query_args)
+        # Get plotlists
+        for key in ['left_plotlist', 'right_plotlist']:
+            self.query_args[key] = query_args_in.get(key, [])
 
         self.gui.change_plot(selected_plot)
 
@@ -110,7 +112,10 @@ class Cinfdata(Widget):
         options['to'] = '{to_year:0>4}-{to_month:0>2}-{to_day:0>2}+'\
             '{to_hour:0>2}%3A{to_minute:0>2}'.format(**self.dateplot_options)
         url += '&'.join(['='.join(kv) for kv in options.items()])
-        url += '&left_plotlist[]=1'  # HACK
+        for plotlist_name in ['left_plotlist', 'right_plotlist']:
+            for plot_number in self.query_args[plotlist_name]:
+                url += '&{}[]={}'.format(plotlist_name, plot_number)
+
         Logger.debug('cinfdata: url formed: ' + url)
         return url
 
