@@ -87,10 +87,9 @@
         id: datedate
         title: 'Plot interval selection'
         BoxLayout:
-            id: vbox
             orientation: 'vertical'
             BoxLayout:
-                size_hint: 1, None
+                size_hint: 1, 1
                 Label:
                     text: 'Shortcuts:'
                     font_size: 20
@@ -109,23 +108,27 @@
                     text: '10m'
                     on_release: dateplot_options.set_ago(10 * 60)
             BoxLayout:
-                size_hint: 1, None
+                size_hint: 1, 1
                 Label:
                     text: 'To:'
                     font_size: 20
-                    size_hint: None, None
-                    width: 60
+                    size_hint: 1, 1
+                    text_size: self.size
+                    halign: 'left'
+                    valign: 'middle'
                 Label:
                     text: 'Active:'
-                    size_hint: None, None
+                    font_size: 16
+                    size_hint: None, 1
                 CheckBox:
                     id: to_active
                     active: True
-                    size_hint: None, None
+                    size_hint: None, 1
                     on_active: dateplot_options.set_to_state(self.active)
+                    halign: 'left'
             BoxLayout:
                 id: to
-                size_hint: 1, None
+                size_hint: 1, 1
                 Spinner:
                     id: to_year
                     name: 'to_year'
@@ -170,9 +173,11 @@
                     text: 'From'
                     font_size: 20
                     size_hint: None, None
-                    width: 60
+                    text_size: self.size
+                    halign: 'left'
+                    valign: 'middle'
             BoxLayout:
-                size_hint: 1, None
+                size_hint: 1, 1
                 Spinner:
                     id: from_year
                     name: 'from_year'
@@ -212,35 +217,40 @@
                     values: [str(val) for val in range(55, -1, -5)]
                     on_text: dateplot_options.change(self, self.text)
     AccordionItem:
-        id: datedate
+        id: dateyaxis
         title: 'Y-axis config'
         BoxLayout:
-            id: vbox
             orientation: 'vertical'
             BoxLayout:
-                size_hint: 1, None
+                size_hint: 1, 1
                 Label:
                     text: 'Left log scale:'
-                    size_hint: None, None
+                    size_hint: 1, None
                 CheckBox:
                     id: left_log
                     active: False
-                    size_hint: None, None
+                    size_hint: 1, None
                     on_active: dateplot_options.set_log('left', self.active)
                 Label:
                     text: 'Right log scale:'
-                    size_hint: None, None
+                    size_hint: 1, None
                 CheckBox:
                     id: right_log
                     active: False
-                    size_hint: None, None
+                    size_hint: 1, None
                     on_active: dateplot_options.set_log('right', self.active)
     AccordionItem:
-        id: left_plotlist
+        id: left_plotlist_accordion_item
         title: 'Left y-axis'
+        BoxLayout:
+            id: left_plotlist
+            orientation: 'vertical'
     AccordionItem:
-        id: right_plotlist
+        id: right_plotlist_accordion_item
         title: 'Right y-axis'
+        BoxLayout:
+            id: right_plotlist
+            orientation: 'vertical'
 
 
 <NoNetworkError>:

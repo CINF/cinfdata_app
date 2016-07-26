@@ -217,21 +217,23 @@ class DatePlotOptions(Accordion):
         graphs = {key: value for key, value in self.link['graphsettings'].items()
                  if key.startswith('dateplot')}
         for plot_list in ['left_plotlist', 'right_plotlist']:
-            bl = BoxLayout(orientation='vertical', size_hint=(1, None))
+            plot_list_widget = getattr(self.ids, plot_list)
+            #bl = BoxLayout(orientation='vertical', size_hint=(1, 1))
             for dateplot, graph in natsorted(graphs.items(), key=itemgetter(0)):
                 # Get a set of selected plots
                 selected = {int(number) for number in
                             self.link['query_args'].get(plot_list, [])}
 
                 # dateplot is something like: datelpot1
-                btn = ToggleButton(text=graph['title'], size_hint_y=None, height=50)
+                btn = ToggleButton(text=graph['title'], size_hint=(1, 1))
                 current_number = int(dateplot.replace('dateplot', ''))
                 #btn.bind(on_release=partial(self.change_plotlist, plot_list, current_number))
                 btn.bind(state=partial(self.change_plotlist, plot_list, current_number))
-                bl.add_widget(btn)
+                plot_list_widget.add_widget(btn)
+                #bl.add_widget(btn)
                 if current_number in selected:
                     btn.state = 'down'
-            getattr(self.ids, plot_list).add_widget(bl)
+            #getattr(self.ids, plot_list).add_widget(bl)
 
         # write the values from the controls into cinfdata
         for direction in ['from', 'to']:
