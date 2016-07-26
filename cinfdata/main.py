@@ -30,6 +30,7 @@ import time
 import calendar
 from pprint import pprint
 from functools import partial
+from operator import itemgetter
 
 from natsort import natsorted
 
@@ -192,21 +193,55 @@ class DatePlotOptions(Accordion):
     cinfdata = ObjectProperty(None)
 
     def __init__(self, setup_and_link, **kwargs):
+        import json
+        with open('DatePlotOptions_input.json', 'w') as file_:
+            json.dump(setup_and_link, file_)
         super(DatePlotOptions, self).__init__(**kwargs)
-        setup, link = setup_and_link
+        self.setup, self.link = setup_and_link
         self.intervals = ['year', 'month', 'day', 'hour', 'minute']
-        
+
+    def on_cinfdata(self, instance, value):
+        """Update the values in cinfdata from the values in the controls when
+        the cinfdata ObjectProperty is set (this happens only on when
+        this class if first instantiated)
+
+        """
+        # Set up log scale widgets
+        query_args_in = self.link['query_args']
+        for side in ('left', 'right'):
+            state_str = query_args_in.get(side + '_logscale', '')
+            if state_str == 'checked':
+                getattr(self.ids, side + '_log').state = 'down'
+
         # Form left and right selection boxes
-        pages = {key: value for key, value in link['graphsettings'].items() if key.startswith('dateplot')}
-        sorted_keys = natsorted(pages.keys())
-        bl = BoxLayout(orientation='vertical', size_hint=(1, None))
-        for key in sorted_keys:
-            graph = link['graphsettings'][key]
-            btn = ToggleButton(text=graph['title'], size_hint_y=None, height=50)
-            btn.bind(on_release=partial(self.change_plotlist, key))
-            bl.add_widget(btn)
-        self.ids.left_plotlist.add_widget(bl)
-        
+        graphs = {key: value for key, value in self.link['graphsettings'].items()
+                 if key.startswith('dateplot')}
+        for plot_list in ['left_plotlist', 'right_plotlist']:
+            bl = BoxLayout(orientation='vertical', size_hint=(1, None))
+            for dateplot, graph in natsorted(graphs.items(), key=itemgetter(0)):
+                # Get a set of selected plots
+                selected = {int(number) for number in
+                            self.link['query_args'].get(plot_list, [])}
+
+                # dateplot is something like: datelpot1
+                btn = ToggleButton(text=graph['title'], size_hint_y=None, height=50)
+                current_number = int(dateplot.replace('dateplot', ''))
+                #btn.bind(on_release=partial(self.change_plotlist, plot_list, current_number))
+                btn.bind(state=partial(self.change_plotlist, plot_list, current_number))
+                bl.add_widget(btn)
+                if current_number in selected:
+                    btn.state = 'down'
+            getattr(self.ids, plot_list).add_widget(bl)
+
+        # write the values from the controls into cinfdata
+        for direction in ['from', 'to']:
+            for interval in self.intervals:
+                name = '{}_{}'.format(direction, interval)
+                self.cinfdata.update_datetime(
+                    name, self.gui(direction, interval).text
+                    )
+        self.cinfdata.update_datetime('to_active', self.gui('to', 'active').active)
+
 
     def gui(self, direction, interval):
         """Convinience to get widget direction_interval e.g. from_hour"""
@@ -232,28 +267,12 @@ class DatePlotOptions(Accordion):
             self.cinfdata.update_datetime('{}_day'.format(direction),
                                           new_selected_day)
 
-    def change_plotlist(self, dateplot, button):
-        print(dateplot, button, button.state)
-
-        # Change setting in cinfdata and check whether the change was allowed, if not:
-
-        #if button.state == 'down':
-        #    button.state = 'normal'
-
-    def on_cinfdata(self, instance, value):
-        """Update the values in cinfdata from the values in the controls when
-        the cinfdata ObjectProperty is set (this happens only on when
-        this class if first instantiated)
-
-        """
-        # write the values from the controls into cinfdata
-        for direction in ['from', 'to']:
-            for interval in self.intervals:
-                name = '{}_{}'.format(direction, interval)
-                self.cinfdata.update_datetime(
-                    name, self.gui(direction, interval).text
-                    )
-        self.cinfdata.update_datetime('to_active', self.gui('to', 'active').active)
+    def change_plotlist(self, plot_list, dateplot_number, _, state):
+        Logger.debug('change_plotlist(%s, %s, %s)', plot_list, dateplot_number, state)
+        if state == 'down':
+            self.cinfdata.query_args[plot_list].add(dateplot_number)
+        else:
+            self.cinfdata.query_args[plot_list].remove(dateplot_number)
 
     def set_ago(self, interval):
         """Set time to now minus interval"""
@@ -271,6 +290,11 @@ class DatePlotOptions(Accordion):
         """Enable or disable the to controls"""
         Logger.debug('DatePlotOptions:set_to_state ' + str(state))
         self.cinfdata.update_datetime('to_active', state)
+
+    def set_log(self, side, state):
+        """Callback for log scale buttons"""
+        Logger.debug('DatePlotOptions.set_log(%s, %s)', side, state)
+        self.cinfdata.query_args[side + '_logscale'] = state
 
 class NoNetworkError(Popup):
     """Custom no network error popup"""

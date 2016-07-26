@@ -49,27 +49,13 @@ class Cinfdata(Widget):
         """Initialize GUI and query args"""
         setup, link = selected_plot
         query_args_in = link['query_args']
-        #pprint(setup)
         self.query_args = {
-            'matplotlib': 'checked',
-            'image_format': 'png',
-            'type': query_args_in['type'],
+            'left_plotlist': set(),
+            'right_plotlist': set(),
         }
 
-        # Get set/not set status of logscale settings
-        for key in ['left_logscale', 'right_logscale']:
-            if key in query_args_in:
-                self.query_args[key] = query_args_in[key]
-
-        # Get y axis extremum settings, or default to 0
-        for key in ['left_ymin', 'left_ymax', 'right_ymin', 'right_ymax']:
-            self.query_args[key] = query_args_in.get(key, 0)
-
-        # Get plotlists
-        for key in ['left_plotlist', 'right_plotlist']:
-            self.query_args[key] = query_args_in.get(key, [])
-
         self.gui.change_plot(selected_plot)
+        Logger.debug('Cinfdata.on_selected_plot args after gui %s', self.query_args)
 
     def _get_data(self, url):
         """Return the bytes from a url"""
@@ -101,20 +87,34 @@ class Cinfdata(Widget):
 
     def form_plot_url(self):
         """Returns formatted plot url"""
-        setup, link = self.selected_plot
+        _, link = self.selected_plot
         setup_folder = link['path'].lstrip('/').split('/')[0]
         url = self.url_start + setup_folder + '/plot.php?'
-        options = {'type': link['query_args']['type'],
-                   'matplotlib': 'checked',
-                   'image_format': 'png'}
+        options = {
+            'type': link['query_args']['type'],
+            'matplotlib': 'checked',
+            'image_format': 'png'
+        }
+
+        # Add dateplot options FIXME check condition and move them into query args
         options['from'] = '{from_year:0>4}-{from_month:0>2}-{from_day:0>2}+'\
             '{from_hour:0>2}%3A{from_minute:0>2}'.format(**self.dateplot_options)
         options['to'] = '{to_year:0>4}-{to_month:0>2}-{to_day:0>2}+'\
             '{to_hour:0>2}%3A{to_minute:0>2}'.format(**self.dateplot_options)
+
+        # Add boolean options
+        for key in ('left_logscale', 'right_logscale'):
+            if self.query_args.get(key, False):
+                options[key] = 'checked'
+
+        # Add everything from options
         url += '&'.join(['='.join(kv) for kv in options.items()])
+
+        # Add lists to url
         for plotlist_name in ['left_plotlist', 'right_plotlist']:
             for plot_number in self.query_args[plotlist_name]:
                 url += '&{}[]={}'.format(plotlist_name, plot_number)
+
 
         Logger.debug('cinfdata: url formed: ' + url)
         return url

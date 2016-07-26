@@ -85,7 +85,7 @@
     orientation: 'vertical'
     AccordionItem:
         id: datedate
-        title: 'General'
+        title: 'Plot interval selection'
         BoxLayout:
             id: vbox
             orientation: 'vertical'
@@ -129,7 +129,6 @@
                 Spinner:
                     id: to_year
                     name: 'to_year'
-                    #disabled: to_active.active
                     text: str(time.strftime('%Y'))
                     values: [str(v) for v in range(int(time.strftime('%Y')), 2008, -1)]
                     on_text: dateplot_options.change(self, self.text)
@@ -212,6 +211,30 @@
                     text: str(int(time.strftime('%M', time.localtime(time.time() - 3600))) )
                     values: [str(val) for val in range(55, -1, -5)]
                     on_text: dateplot_options.change(self, self.text)
+    AccordionItem:
+        id: datedate
+        title: 'Y-axis config'
+        BoxLayout:
+            id: vbox
+            orientation: 'vertical'
+            BoxLayout:
+                size_hint: 1, None
+                Label:
+                    text: 'Left log scale:'
+                    size_hint: None, None
+                CheckBox:
+                    id: left_log
+                    active: False
+                    size_hint: None, None
+                    on_active: dateplot_options.set_log('left', self.active)
+                Label:
+                    text: 'Right log scale:'
+                    size_hint: None, None
+                CheckBox:
+                    id: right_log
+                    active: False
+                    size_hint: None, None
+                    on_active: dateplot_options.set_log('right', self.active)
     AccordionItem:
         id: left_plotlist
         title: 'Left y-axis'
