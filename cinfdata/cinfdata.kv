@@ -262,3 +262,25 @@
         Button:
             text: 'Ok'
             on_press: root.dismiss()
+
+<PasswordPopup>:
+    id: password_popup
+    title: 'Enter credentials'
+    auto_dismiss: False
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Username'
+        TextInput:
+            id: username
+            multiline: False
+            focus: True
+        Label:
+            text: 'Password'
+        TextInput:
+            id: password
+            multiline: False
+            password: True
+        Button:
+            text: 'Done'
+            on_press: root.dismiss()

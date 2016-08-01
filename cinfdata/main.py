@@ -45,6 +45,7 @@ from kivy.uix.popup import Popup
 from kivy.uix.scatter import Scatter
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.togglebutton import ToggleButton
+from kivy.uix.popup import Popup
 from kivy.core.image import Image as CoreImage
 from kivy.clock import Clock
 from kivy.properties import ObjectProperty
@@ -52,7 +53,10 @@ from kivy.config import Config
 Config.set('kivy', 'log_level', 'debug')
 from kivy.logger import Logger
 
-import creds
+try:
+    import creds
+except ImportError:
+    creds = None
 from cinfdata import Cinfdata
 
 __version__ = 0.1
@@ -70,18 +74,40 @@ class MainCarousel(Carousel):
     """
     def __init__(self, **kwargs):
         super(MainCarousel, self).__init__(**kwargs)
+
+        self.waiting_png = CoreImage('data/waiting.png')
+
+        Clock.schedule_once(self._after_init)
+
+    def _after_init(self, _):
+        """Get password"""
+        username = password = None
+        if creds is not None:
+            username, password = creds.username, creds.password
+
+        # Implement using password managers
+        if username is None:
+            # username, password = password.get_creds()
+            pass
+
+        # If we git creds from creds module or password managers, set callback
+        if username is not None:
+            callback = partial(self._after_password, username, password)
+            Clock.schedule_once(callback)
+            return
+
+        # Otherwise, ask for them (PasswordOpen will call _after_password)
+        pw = PasswordPopup(self)
+        pw.open()
+
+    def _after_password(self, username, password, _):
+        """After password has been received, initialize cinfdata"""
         # Initiate cinfdata and bind properties
-        self.cinfdata = Cinfdata(self, creds.username, creds.password)
+        self.cinfdata = Cinfdata(self, username, password)
 
         # Add a reference to cinfdata to page selection
         self.ids.page_selection.cinfdata = self.cinfdata
         self.ids.main_image.cinfdata = self.cinfdata
-
-        # Initiate date plot options and add cinfdata reference
-        #self.dateplot_options = DatePlotOptions()
-        #self.dateplot_options.cinfdata = self.cinfdata
-
-        self.waiting_png = CoreImage('data/waiting.png')
 
     def on_index(self, *args):
         """Update image when switcing into the middle carousel part
@@ -317,6 +343,23 @@ class MainImage(Scatter):
             self.ids.image.texture = data.texture
         self.ids.image.canvas.ask_update()
 
+
+class PasswordPopup(Popup):
+    """A password for credentials"""
+
+    def __init__(self, main, *args, **kwargs):
+        super(PasswordPopup, self).__init__(*args, **kwargs)
+        self.main = main
+
+    def dismiss(self, *args, **kwargs):
+        """Override dismiss action"""
+        callback = partial(
+            self.main._after_password,
+            self.ids.username.text,
+            self.ids.password.text,
+        )
+        Clock.schedule_once(callback)
+        super(PasswordPopup, self).dismiss(*args, **kwargs)
 
 def main():
     """Main run function"""
