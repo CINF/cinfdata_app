@@ -1,3 +1,4 @@
 *~
 *.pyc
 cinfdata/creds.py
+.buildozer
