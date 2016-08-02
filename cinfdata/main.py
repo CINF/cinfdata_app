@@ -108,6 +108,9 @@ class MainCarousel(Carousel):
         # Initiate cinfdata and bind properties
         self.cinfdata = Cinfdata(self, username, password)
 
+        # FIXME, check password somehow and think about how to come
+        # back to _after_init
+
         # Add a reference to cinfdata to page selection
         self.ids.page_selection.cinfdata = self.cinfdata
         self.ids.main_image.cinfdata = self.cinfdata
@@ -186,6 +189,10 @@ class PageSelection(BoxLayout):
         dropdown = DropDown()
 
         for setup in self.cinfdata.get_setups():
+            # Do not show setups that has no dateplots
+            if len([l for l in setup['links']
+                    if l['pagetype'] == 'dateplot']) == 0:
+                continue
             btn = SetupButton(text='Setup: ' + setup['title'], size_hint_y=None,
                               height=44, setup=setup)
             btn.bind(on_release=lambda btn: dropdown.select(btn))
@@ -202,6 +209,9 @@ class PageSelection(BoxLayout):
         self.pages_widget.clear_widgets()
         setup = setup_button.data
         for link in setup_button.data['links']:
+            # So far only dateplots are implemented
+            if link['pagetype'] != 'dateplot':
+                continue
             codename = setup['codename']
             button = ToggleButton(text=link['title'], group=codename,
                                   size_hint_y=None, height=50)
