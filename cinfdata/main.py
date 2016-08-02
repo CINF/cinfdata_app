@@ -59,7 +59,7 @@ except ImportError:
     creds = None
 from cinfdata import Cinfdata
 
-__version__ = 0.1
+__version__ = '0.1'
 
 class CinfdataApp(App):
     """This is the main CinfdataApp"""
@@ -219,9 +219,9 @@ class DatePlotOptions(Accordion):
     cinfdata = ObjectProperty(None)
 
     def __init__(self, setup_and_link, **kwargs):
-        import json
-        with open('DatePlotOptions_input.json', 'w') as file_:
-            json.dump(setup_and_link, file_)
+        #import json
+        #with open('DatePlotOptions_input.json', 'w') as file_:
+        #    json.dump(setup_and_link, file_)
         super(DatePlotOptions, self).__init__(**kwargs)
         self.setup, self.link = setup_and_link
         self.intervals = ['year', 'month', 'day', 'hour', 'minute']

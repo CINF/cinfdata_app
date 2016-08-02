@@ -13,6 +13,7 @@ from io import BytesIO
 import urllib2
 import base64
 import json
+import requests
 from pprint import pprint
 
 from kivy.uix.widget import Widget
@@ -34,6 +35,9 @@ class Cinfdata(Widget):
         """Init urllib and data"""
         super(Cinfdata, self).__init__()
 
+        self.username = username
+        self.password = password
+        
         self.gui = gui
         self.query_args = None
         self.dateplot_options = {}
@@ -73,8 +77,15 @@ class Cinfdata(Widget):
 
     def get_setups(self):
         """Get the list of setups from cinfdata"""
-        url = '{}data_as_json.php?request=index'.format(self.url_start)
-        return self._get_json(url)
+        r = requests.get('https://cinfdata.fysik.dtu.dk/data_as_json.php?request=index', auth=(self.username, self.password))
+        #url = '{}data_as_json.php?request=index'.format(self.url_start)
+        #original = self._get_json(url)
+        #print("###", type(original))
+        #print("######################################################")
+        #print("###", type(r.json()))
+        #print(original == r.json())
+        #print(r.text)
+        return r.json()#original
 
     def get_plots(self, setup):
         """Get the plots from cinfdata for a specific setup"""

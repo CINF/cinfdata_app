@@ -36,7 +36,7 @@ version.filename = %(source.dir)s/main.py
 
 # (list) Application requirements
 # comma seperated e.g. requirements = sqlite3,kivy
-requirements = kivy,natsort
+requirements = requests, natsort, kivy
 
 # (str) Custom source folders for requirements
 # Sets custom source for any requirements with recipes
