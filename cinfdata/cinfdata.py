@@ -10,11 +10,10 @@ type properties (with observer pattern) for events.
 """
 
 from io import BytesIO
-import urllib2
-import base64
 import json
+from functools import partial
 import requests
-from pprint import pprint
+
 
 from kivy.uix.widget import Widget
 from kivy.properties import ObjectProperty
@@ -35,19 +34,13 @@ class Cinfdata(Widget):
         """Init urllib and data"""
         super(Cinfdata, self).__init__()
 
-        self.username = username
-        self.password = password
-        
+        # Partial requests.get with credentials
+        self.get = partial(requests.get, auth=(username, password))
+        self.url_start = 'https://cinfdata.fysik.dtu.dk/'
+
         self.gui = gui
         self.query_args = None
         self.dateplot_options = {}
-
-        # Settings for urllib
-        base64string = base64.encodestring(
-            '{}:{}'.format(username, password)
-            )[:-1]
-        self.url_start = 'https://cinfdata.fysik.dtu.dk/'
-        self.basestring = "Basic {}".format(base64string)
 
     def on_selected_plot(self, _, selected_plot):
         """Initialize GUI and query args"""
@@ -61,36 +54,15 @@ class Cinfdata(Widget):
         self.gui.change_plot(selected_plot)
         Logger.debug('Cinfdata.on_selected_plot args after gui %s', self.query_args)
 
-    def _get_data(self, url):
-        """Return the bytes from a url"""
-        Logger.debug('Cinfdata._get_data: %s', url)
-        request = urllib2.Request(url)
-        request.add_header("Authorization", self.basestring)
-        handle = urllib2.urlopen(request)
-        data = handle.read()
-        handle.close()
-        return data
-
-    def _get_json(self, url):
-        """Return the object decoded from json from url"""
-        return json.loads(self._get_data(url))
-
     def get_setups(self):
         """Get the list of setups from cinfdata"""
-        r = requests.get('https://cinfdata.fysik.dtu.dk/data_as_json.php?request=index', auth=(self.username, self.password))
-        #url = '{}data_as_json.php?request=index'.format(self.url_start)
-        #original = self._get_json(url)
-        #print("###", type(original))
-        #print("######################################################")
-        #print("###", type(r.json()))
-        #print(original == r.json())
-        #print(r.text)
-        return r.json()#original
+        url = '{}data_as_json.php?request=index'.format(self.url_start)
+        return self.get(url).json()
 
     def get_plots(self, setup):
         """Get the plots from cinfdata for a specific setup"""
         url = '{}{}/info_json.php'.format(self.url_start, setup)
-        return self._get_json(url)
+        return self.get(url).json()
 
     def update_datetime(self, name, value):
         """Update a datetime value"""
@@ -132,5 +104,5 @@ class Cinfdata(Widget):
 
     def get_plot(self):
         """Return a CoreImage from the current settings"""
-        data = self._get_data(self.form_plot_url())
+        data = self.get(self.form_plot_url()).content
         return CoreImage(BytesIO(data), ext='png')
