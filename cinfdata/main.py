@@ -66,6 +66,9 @@ class CinfdataApp(App):
     def build(self):
         return MainCarousel()
 
+    def on_pause(self):
+        return True
+
 class MainCarousel(Carousel):
     """Main cinfdata class.
 
